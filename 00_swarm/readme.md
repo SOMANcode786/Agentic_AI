@@ -1,3 +1,6 @@
+---
+SWARM
+---
 Swarm ek naya concept hai OpenAI ki taraf se jahan multiple AI agents mil ke kaam karte hain.
 
 Yeh system kuch is tarah ka hota hai:
