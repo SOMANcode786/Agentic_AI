@@ -38,6 +38,7 @@ python_agent = Agent(
 
 next_js_agent = Agent(
     name="NextJS_Assistant",
+    
     instructions="You are a helpful Next.js assistant.",
     model=model
 )
@@ -59,5 +60,7 @@ async def main():
     )
     print("✅ Run completed")
     print(result.final_output)
+    print("---")
+    print("NAME",triage_agent.name)
 
 asyncio.run(main())
