@@ -1,6 +1,19 @@
-def main():
-    print("Hello from 01-basic-tool!")
+from agents import Agent, Runner
+from model_config import config
 
 
-if __name__ == "__main__":
-    main()
+
+assistant=Agent(
+    name=" assistant ",
+    instructions="you are a helful  assistant "
+)
+
+
+result=Runner.run_sync(
+    assistant,
+    input="What is the weather today",
+    run_config=config
+)
+
+print("The result is : -- > : ",result.final_output)
+
