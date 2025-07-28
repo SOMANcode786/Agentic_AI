@@ -57,7 +57,7 @@ This repository is a structured learning hub focused on mastering:
 
 | Type | Link |
 |------|------|
-| 📄 PDF | [`a-practical-guide-to-building-agents.pdf`](./a-practical-guide-to-building-agents.pdf) |
+| 📄 PDF | [[`a-practical-guide-to-building-agents.pdf`](./a-practical-guide-to-building-agents.pdf) ](https://github.com/panaversity/learn-agentic-ai/blob/main/01_ai_agents_first/04.0_hello_agent/OpenAI_agents_SDK_Hello_world.ipynb)|
 | 📝 Appendix | `appendix_litellm`, `appendix_sdk_v_changes` |
 | 🧠 Blogs & Docs | Coming soon in `resources.md` |
 
