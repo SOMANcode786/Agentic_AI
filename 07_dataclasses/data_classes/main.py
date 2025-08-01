@@ -1,11 +1,11 @@
-from agents  import OpenAIChatCompletionsModel,RunConfig,AsyncOpenAI
+from agents import Agent,Runerr ,OpenAIChatCompletionsModel,RunConfig,AsyncOpenAI
 from dotenv import load_dotenv
+from dataclasses import dataclass
 import os
-
 load_dotenv()
 
 gemini_api_key=os.getenv("GEMINI_API_KEY")
-print(gemini_api_key)
+
 
 external_client = AsyncOpenAI(
     api_key=gemini_api_key,
@@ -22,3 +22,13 @@ config = RunConfig(
     model_provider=external_client,
     tracing_disabled=True
 )
+
+@dataclass
+class American:
+    name: str
+    age: int
+    language: ClassVar[str] = "English"
+
+    def eats(self):
+        return "f{self.name} eats hamburgers."
+    
