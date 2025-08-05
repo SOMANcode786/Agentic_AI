@@ -1,27 +1,5 @@
-from agents import Agent,Runerr ,OpenAIChatCompletionsModel,RunConfig,AsyncOpenAI
-from dotenv import load_dotenv
 from dataclasses import dataclass
-import os
-load_dotenv()
-
-gemini_api_key=os.getenv("GEMINI_API_KEY")
-
-
-external_client = AsyncOpenAI(
-    api_key=gemini_api_key,
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-)
-
-model = OpenAIChatCompletionsModel(
-    model="gemini-2.0-flash",
-    openai_client=external_client
-)
-
-config = RunConfig(
-    model=model,
-    model_provider=external_client,
-    tracing_disabled=True
-)
+from typing import ClassVar
 
 @dataclass
 class American:
@@ -30,5 +8,16 @@ class American:
     language: ClassVar[str] = "English"
 
     def eats(self):
-        return "f{self.name} eats hamburgers."
+        return f"{self.name} eats hamburgers."
+
+    def speak(self):
+        return f"{self.name} is speaking .. {American.language}"
     
+    @staticmethod
+    def get_language():  # renamed to avoid conflict
+        return American.language
+
+john = American(name="john", age=25)
+# print(john.speak())           # ✅ john is speaking .. English
+# print(john.eats())            # ✅ john eats hamburgers.
+print(American.get_language())  # ✅ English
