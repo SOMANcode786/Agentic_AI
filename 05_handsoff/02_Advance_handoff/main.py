@@ -1,6 +1,8 @@
-from agents import Agent ,Runner,OpenAIChatCompletionsModel,RunConfig,AsyncOpenAI
+from agents import Agent, Runner, OpenAIChatCompletionsModel, RunConfig, AsyncOpenAI
 from dotenv import load_dotenv
 import os
+
+# Load environment variables
 load_dotenv()
 
 gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -9,52 +11,52 @@ gemini_api_key = os.getenv("GEMINI_API_KEY")
 if not gemini_api_key:
     raise ValueError("GEMINI_API_KEY is not set. Please ensure it is defined in your .env file.")
 
-#Reference: https://ai.google.dev/gemini-api/docs/openai
+# Reference: https://ai.google.dev/gemini-api/docs/openai
 external_client = AsyncOpenAI(
     api_key=gemini_api_key,
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
 )
 
+# Define model
 model = OpenAIChatCompletionsModel(
     model="gemini-2.0-flash",
     openai_client=external_client,
-    
-
 )
-config=RunConfig(
+
+# Run configuration
+config = RunConfig(
     model=model,
-    model_provider=external_client,
-    tracing_disabled=
+    model_provider="openai",  # should be a provider name string
+    tracing_disabled=True
 )
 
-cusotomer_support=Agent(
-    name="customer support Assistant",
+# Agents
+customer_support = Agent(
+    name="Customer Support Assistant",
     instructions="""
-        you are  a helpful cutomer support assitant youre task to anwser about suctomer support 
-        give the reponse in bullets point
-        breif sentence
+        You are a helpful customer support assistant.
+        Your task is to answer customer support questions.
+        Give responses in bullet points with brief sentences.
+    """
+)
+progimming_education = Agent(
+    name="Education Assistant",
+    instructions="""
+        You are a helpful progimming_educationn assistant.
+        Your task is to answer questions related to progimming_education.
     """
 )
 
-education=Agent(
-    name="Education Assistant ",
-    instructions="""
-        you are a education helpful assiastant youre task to told a question related to education
-
-    """
+# Triage agent with handoffs
+triage_agent = Agent(
+    name="Triage Agent",
+    handoffs=[customer_support,progimming_education]
 )
 
-triage_agent=Agent(
-    name="triage Agent",
-    handoffs=[cusotomer_support,education]
-)
+# Take input
+query = input("Enter the question: ")
 
-querry=input("enter the question : ")
+# Run synchronously
+result = Runner.run_sync(triage_agent, query, run_config=config)
 
-result=Runner.run_sync(triage_agent,querry)
 print(result.final_output)
-
-
-
-
-
