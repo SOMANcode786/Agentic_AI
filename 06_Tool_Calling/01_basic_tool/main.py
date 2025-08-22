@@ -1,20 +1,13 @@
  
 
-from agents import (
-    Agent,                           # 🤖 Core agent class
-    Runner,                          # 🏃 Runs the agent
-    AsyncOpenAI,                     # 🌐 OpenAI-compatible async client
-    OpenAIChatCompletionsModel,     # 🧠 Chat model interface
-    function_tool,                   # 🛠️ Decorator to turn Python functions into tools
-    set_default_openai_client,      # ⚙️ (Optional) Set default OpenAI client
-    set_tracing_disabled,           # 🚫 Disable internal tracing/logging
-)
+from agents import Agent,Runner,OpenAIChatCompletionsModel,AsyncOpenAI         
+
 from model_config import config
 
 
 agent: Agent = Agent(name="Assistant", instructions="You are a helpful assistant")
 result=Runner.run_sync(
-    assistant,
+    agent=agent,
     input="What is the weather today"
   
 )
