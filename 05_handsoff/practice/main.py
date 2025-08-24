@@ -1,18 +1,18 @@
 from agents import Agent, Runner, OpenAIChatCompletionsModel, RunConfig, AsyncOpenAI
 from dotenv import load_dotenv
-import os
+import os   
 
 # Load environment variables
 load_dotenv()
 
 gemini_api_key = os.getenv("GEMINI_API_KEY")
-
 if not gemini_api_key:
     raise ValueError("GEMINI_API_KEY is not set. Please ensure it is defined in your .env file.")
 
 # Gemini via OpenAI-compatible endpoint
 external_client = AsyncOpenAI(
     api_key=gemini_api_key,
+
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
 )
 
@@ -20,8 +20,7 @@ external_client = AsyncOpenAI(
 model = OpenAIChatCompletionsModel(
     model="gemini-1.5-flash",   # ✅ correct model name
     openai_client=external_client,
-)
-
+)               
 # Run configuration
 config = RunConfig(
     model=model,
@@ -29,34 +28,31 @@ config = RunConfig(
     tracing_disabled=True
 )
 
-# Agents
-customer_support = Agent(
-    name="Customer Support Assistant",
+
+language_agent = Agent(
+    name="Language Agent",
     instructions="""
-        You are a helpful customer support assistant.
-        Your task is to answer customer support questions.
-        Give responses in bullet points with brief sentences.
+        You are a helpful language assistant.
+        Your task is to answer questions related to languages.
     """
 )
 
-programming_education = Agent(
-    name="Education Assistant",
+math_agent = Agent(
+    name="Math Agent",
     instructions="""
-        You are a helpful programming education assistant.
-        Your task is to answer questions related to programming and education.
-    """
-)
+        You are a helpful math assistant.
+        Your task is to answer math questions.
+    """     
 
+)
 # Triage agent with handoffs
 triage_agent = Agent(
     name="Triage Agent",
-    handoffs=[customer_support, programming_education]
-)
+    handoffs=[language_agent, math_agent]
+)   
 
-# Take input
-query = input("Enter the question: ")
+input_query = input("Enter the question: ")
 
 # Run synchronously
-result = Runner.run_sync(triage_agent, query, run_config=config)
-
-print(result.final_output)
+result = Runner.run_sync(triage_agent, input_query, run_config=config)
+print("The result is : -- > : ", result.final_output)

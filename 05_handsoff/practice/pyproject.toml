@@ -1,5 +1,5 @@
 [project]
-name = "02-advance-handoff"
+name = "practice"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -8,6 +8,3 @@ dependencies = [
     "openai-agents>=0.2.4",
     "python-dotenv>=1.1.1",
 ]
-
-[tool.uv.workspace]
-members = ["practice"]
