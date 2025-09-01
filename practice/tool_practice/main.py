@@ -25,7 +25,7 @@ model = OpenAIChatCompletionsModel(
 # Run config with verbose mode
 config = RunConfig(
     model=model,
-    verbose=True,
+
     tracing_disabled=True
 )
 
