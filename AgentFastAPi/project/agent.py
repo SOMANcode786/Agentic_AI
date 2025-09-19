@@ -1,5 +1,5 @@
 # backend/agent.py
-from agents import Agent, Runner, AsyncOpenAI, RunConfig, OpenAIChatCompletionsModel
+from agents import Agent, Runner, AsyncOpenAI, RunConfig, OpenAIChatCompletionsModel,function_tool, AgentHooks
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
@@ -36,10 +36,39 @@ config = RunConfig(
 )
 
 
+# class AgentHooks():
+
+#     async def on_start(context, assistant):
+#         print(f"🕘 Agent {assistant.name} is now in charge of handling the task")
+#     async def on_end(context, agent, output):
+#         print(f"✅ Agent {assistant.name} completed work with result: {output}")
+#     async def on_tool_start(context, assistant, tool):
+#         print(f"🔨 Agent {assistant.name} is using tool: {tool.name}")
+
+#     async def on_tool_end(context, agent, tool, result):
+#         print(f"✅🔨 Agent {assistant.name} finished using {tool.name}. Result: {result}")
+
+
+
+
+
+
+
+
+
+@function_tool
+def getweather(location: str) -> str:
+    """Get the current weather for a given location."""
+    # Dummy implementation for illustration
+    return f"The current weather in {location} is sunny with a temperature of 25°C."
+
+
 # Define agent
 assistant = Agent(
     name="SimpleAssistant",
-    instructions="You are a helpful assistant. Answer the user's question briefly."
+    instructions="You are a helpful assistant. Answer the user's question briefly. aslo use the getweather tool to get the weather information if needed.",
+    tools=[getweather],
+    # hooks=AgentHooks,
 )
 
 # ✅ Async helper

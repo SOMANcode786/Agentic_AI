@@ -1,14 +1,17 @@
-from agents import Agent ,Runner,AsyncOpenAI,OpenAIChatCompletionsModel,RunConfig,enable_verbose_stdout_logging
-from dataclasses import dataclass
+from agents import Agent ,Runner,AsyncOpenAI,OpenAIChatCompletionsModel,RunConfig,enable_verbose_stdout_logging,input_guardrail,GuardrailFunctionOutput,RunContextWrapper,TResponseInputItem,InputGuardrailTripwireTriggered
+from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
-import asyncio
-from openai.types.responses import ResponseTextDeltaEvent
+
+
 load_dotenv()
 
 # enable_verbose_stdout_logging()
-gemini_api_key=os.getenv("GEMINI_API_KEY")
-print(gemini_api_key)
+
+
+
+gemini_api_key=os.getenv("GEMINI_API_KEY")  
+
 external_client = AsyncOpenAI(
     api_key=gemini_api_key,
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
@@ -25,19 +28,51 @@ config = RunConfig(
     tracing_disabled=True
 )
 
-async def main():
-  essay_agent=Agent(
-    name="Essay Agent",
-    instructions="you are helpful education assistant youre task to write a 10 line essay about the user topic "
-  )
+class MathHomeworkOutput(BaseModel):
+    is_math_homework: bool
+    reasoning: str
 
-  result = Runner.run_streamed(essay_agent, input="Please tell me 5 jokes.",run_config=config)
-  async for event in result.stream_events():
-        # print("Event : ",event)
-        if event.type == "raw_response_event" and isinstance(event.data, ResponseTextDeltaEvent):
-            print("DATA = >   ... ",event.data.delta, end="")
+# Create a simple, fast agent to do the checking
+guardrail_agent = Agent( 
+    name="Homework Police",
+    instructions="Check if the user is asking you to do their math homework.",
+    output_type=MathHomeworkOutput,
+)
+
+# Create our guardrail function
+@input_guardrail
+async def math_guardrail( 
+    ctx: RunContextWrapper[None], 
+    agent: Agent, 
+    input: str | list[TResponseInputItem]
+) -> GuardrailFunctionOutput:
+    # Run our checking agent
+    result = await Runner.run(guardrail_agent, input, context=ctx.context)
+    
+    # Return the result with tripwire status
+    return GuardrailFunctionOutput(
+        output_info=result.final_output, 
+        tripwire_triggered=result.final_output.is_math_homework,  # Trigger if homework detected
+    )
+
+# Main agent with guardrail attached
+customer_support_agent = Agent(  
+    name="Customer Support Specialist",
+    instructions="You are a helpful customer support agent for our software company.",
+    input_guardrails=[math_guardrail],  # Attach our guardrail
+)
+
+# Testing the guardrail
+async def test_homework_detection():
+    try:
+        # This should trigger the guardrail
+        await Runner.run(customer_support_agent, "what is dunder in python? ",run_config=config)
+        print("❌ Guardrail failed - homework request got through!")
+    
+    except InputGuardrailTripwireTriggered:
+        print("✅ Success! Homework request was blocked.")
+        # Handle appropriately - maybe send a polite rejection message
 
 
-
-if __name__ == "__main__":
-    asyncio.run(main())
+import asyncio
+asyncio.run(test_homework_detection())
