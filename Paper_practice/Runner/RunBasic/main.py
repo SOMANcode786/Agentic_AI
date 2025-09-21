@@ -4,8 +4,6 @@ from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
 
-# Load .env
-load_dotenv()
 
 # Get Gemini or OpenAI key from .env
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -42,3 +40,5 @@ assistant = Agent(
     instructions="You are a helpful assistant. Answer the user's question briefly."
 )
 
+
+result=Runner.run_sync(assistant,"what is python",run_config=config)
