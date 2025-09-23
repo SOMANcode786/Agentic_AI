@@ -18,6 +18,9 @@ model = OpenAIChatCompletionsModel(
     openai_client=client
 )
 
+
+
+
 # Define agent
 agent = Agent(
     name="gemini_chat_agent",
@@ -25,34 +28,4 @@ agent = Agent(
     instructions="You are a helpful tutor. Continue conversations naturally.",
 )
 
-# ---- Chat Function (manual session memory) ----
-session_memory = {}
 
-def chat(session_id: str, user_input: str):
-    # store user input
-    if session_id not in session_memory:
-        session_memory[session_id] = []
-    session_memory[session_id].append(f"User: {user_input}")
-
-    # send conversation history as input
-    conversation = "\n".join(session_memory[session_id])
-    result = Runner.run_sync(agent, conversation)
-
-    # extract reply safely
-    reply = result.output[0].content[0].text
-
-    # save agent reply
-    session_memory[session_id].append(f"Assistant: {reply}")
-
-    return reply
-
-
-# ---- Example usage ----
-if __name__ == "__main__":
-    session = "abc123"
-
-    print("User: Hello!")
-    print("Assistant:", chat(session, "Hello!"))
-
-    print("\nUser: What did I just say?")
-    print("Assistant:", chat(session, "What did I just say?"))

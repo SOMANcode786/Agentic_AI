@@ -1,0 +1,76 @@
+from agents import Agent ,Runner,AsyncOpenAI,OpenAIChatCompletionsModel,RunConfig,enable_verbose_stdout_logging,input_guardrail,GuardrailFunctionOutput,RunContextWrapper,TResponseInputItem,InputGuardrailTripwireTriggered
+from pydantic import BaseModel
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv()
+
+# enable_verbose_stdout_logging()
+
+
+
+gemini_api_key=os.getenv("GEMINI_API_KEY")  
+
+external_client = AsyncOpenAI(
+    api_key=gemini_api_key,
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+)
+ 
+model = OpenAIChatCompletionsModel(
+    model="gemini-2.0-flash",
+    openai_client=external_client
+)
+
+config = RunConfig(
+    model=model,
+    model_provider=external_client,
+    tracing_disabled=True
+)
+
+
+
+
+guardrail_agent = Agent( 
+    name="Homework Police",
+    instructions="Check if the user is asking you to do their math homework.",
+
+)
+
+# Create our guardrail function
+@input_guardrail
+async def math_guardrail( 
+    ctx: RunContextWrapper[None], 
+    agent: Agent, 
+    input: str | list[TResponseInputItem]
+) -> GuardrailFunctionOutput:
+    # Run our checking agent
+    result = await Runner.run(guardrail_agent, input, context=ctx.context)
+    
+    # Return the result with tripwire status
+    return GuardrailFunctionOutput(
+        output_info=result.final_output, 
+        tripwire_triggered=True,  # Trigger if homework detected
+    )
+
+# Main agent with guardrail attached
+customer_support_agent = Agent(  
+    name="Customer Support Specialist",
+    instructions="You are a helpful customer support agent for our software company.",
+    input_guardrails=[math_guardrail],  # Attach our guardrail
+)
+
+# Testing the guardrail
+async def test_homework_detection():
+    try:
+        # This should trigger the guardrail
+        await Runner.run(customer_support_agent, "what is dunder in python? ",run_config=config)
+        print("❌ Guardrail failed - homework request got through!")
+    
+    except InputGuardrailTripwireTriggered:
+        print("✅ Success! Homework request was blocked.")
+        # Handle appropriately - maybe send a polite rejection message
+
+
+import asyncio
+asyncio.run(test_homework_detection())
