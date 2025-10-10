@@ -1,4 +1,4 @@
-from agents import Agent ,Runner,AsyncOpenAI,OpenAIChatCompletionsModel,RunConfig,enable_verbose_stdout_logging,input_guardrail,GuardrailFunctionOutput,RunContextWrapper,TResponseInputItem,InputGuardrailTripwireTriggered
+from agents import Agent, OutputGuardrailTripwireTriggered ,Runner,AsyncOpenAI,OpenAIChatCompletionsModel,RunConfig,enable_verbose_stdout_logging,input_guardrail,GuardrailFunctionOutput,RunContextWrapper,TResponseInputItem,InputGuardrailTripwireTriggered, output_guardrail
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
@@ -31,46 +31,70 @@ config = RunConfig(
 
 
 
-guardrail_agent = Agent( 
-    name="Homework Police",
-    instructions="Check if the user is asking you to do their math homework.",
+class MessageOutput(BaseModel): 
+    response: str
 
+class SensitivityCheck(BaseModel): 
+    contains_sensitive_info: bool
+    reasoning: str
+    confidence_level: int  # 1-10 scale
+
+# Fast guardrail agent for checking outputs
+sensitivity_guardrail_agent = Agent(
+    name="Privacy Guardian",
+    instructions="""
+    Check if the response contains:
+    - Personal information (SSN, addresses, phone numbers)
+    - Internal company information
+    - Confidential data
+    - Inappropriate personal details
+    
+    Be thorough but not overly sensitive to normal business information.
+    """,
+    output_type=SensitivityCheck,
 )
 
-# Create our guardrail function
-@input_guardrail
-async def math_guardrail( 
-    ctx: RunContextWrapper[None], 
+@output_guardrail
+async def privacy_guardrail(  
+    ctx: RunContextWrapper, 
     agent: Agent, 
-    input: str | list[TResponseInputItem]
+    output: MessageOutput
 ) -> GuardrailFunctionOutput:
-    # Run our checking agent
-    result = await Runner.run(guardrail_agent, input, context=ctx.context)
+    # Check the agent's response for sensitive content
+    result = await Runner.run(
+        sensitivity_guardrail_agent, 
+        f"Please analyze this customer service response: {output.response}", 
+        context=ctx.context
+    )
     
-    # Return the result with tripwire status
     return GuardrailFunctionOutput(
-        output_info=result.final_output, 
-        tripwire_triggered=True,  # Trigger if homework detected
+        output_info=result.final_output,
+        tripwire_triggered=result.final_output.contains_sensitive_info,
     )
 
-# Main agent with guardrail attached
-customer_support_agent = Agent(  
-    name="Customer Support Specialist",
-    instructions="You are a helpful customer support agent for our software company.",
-    input_guardrails=[math_guardrail],  # Attach our guardrail
+# Main customer support agent with output guardrail
+support_agent = Agent( 
+    name="Customer Support Agent",
+    instructions="Help customers with their questions. Be friendly and informative.",
+    output_guardrails=[privacy_guardrail],  # Add our privacy check
+    output_type=MessageOutput,
 )
 
-# Testing the guardrail
-async def test_homework_detection():
+async def test_privacy_protection():
     try:
-        # This should trigger the guardrail
-        await Runner.run(customer_support_agent, "what is dunder in python? ",run_config=config)
-        print("❌ Guardrail failed - homework request got through!")
+        # This might generate a response with sensitive info
+        result = await Runner.run(
+            support_agent, 
+            "What's my account status for john.doe@email.com?",
+            run_config=config
+        )
+        print(f"✅ Response approved: {result.final_output.response}")
     
-    except InputGuardrailTripwireTriggered:
-        print("✅ Success! Homework request was blocked.")
-        # Handle appropriately - maybe send a polite rejection message
-
+    except OutputGuardrailTripwireTriggered as e:
+        print("🛑 Response blocked - contained sensitive information!")
+        # Send a generic response instead
+        fallback_message = "I apologize, but I need to verify your identity before sharing account details."
 
 import asyncio
-asyncio.run(test_homework_detection())
+
+asyncio.run(test_privacy_protection())
